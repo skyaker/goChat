@@ -1,0 +1,119 @@
+openapi: '3.0.3'
+info:
+  title: Chat API specification
+  version: '1.0'
+servers:
+  - url: http://localhost:8080
+paths:
+  /api/auth/register:
+    post:
+      summary: New user registration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/register_request'
+      responses:
+        '200':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/register__response'
+        '400':
+          description: User may already exists
+        '500':
+          description: Unpredicted error
+
+  /api/auth/login:
+    post:
+      summary: Account log in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/login_request'
+      responses:
+        '201':
+          description: User logged in successfully
+        '401':
+          description: User was not found
+        '501':
+          description: Unpredicted error
+
+  /api/auth/check_token:
+    get:
+      summary: check if token valid
+      security:
+        - bearerAuth: []
+      responses:
+        '202':
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    valid:
+                      type: boolean
+                    user:
+                      type: object
+                      properties:
+                        user_id:
+                          type: integer
+                        username:
+                          type: string
+                        email:
+                          type: string
+                          format: email
+        '402':
+          description: Token is invalid
+        '502':
+          description: Internal server error
+
+components:
+  schemas:
+    register_request:
+      type: object
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        name:
+          type: string
+    register__response:
+      type: object
+      properties:
+        user_id: 
+          type: integer
+        token: 
+          type: string
+    login_request:
+      type: object
+      properties:
+        email: 
+          type: string
+          format: email
+        password:
+          type: string
+    login__response:
+      type: object
+      properties:
+        token:
+          type: string
+        refresh_token:
+          type: string
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
