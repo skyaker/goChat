@@ -1,23 +1,23 @@
 DO $$ 
 BEGIN
-  IF NOT EXISTS (SELECT FROM pg_database WHERE datname = 'users_db') THEN
-    CREATE DATABASE users_db;
+  IF NOT EXISTS (SELECT FROM pg_database WHERE datname = 'messages_db') THEN
+    CREATE DATABASE messages_db;
   END IF;
 END $$;
 
-\c users_db;
+\c messages_db;
 
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE IF NOT EXISTS dialogs (
   id SERIAL PRIMARY KEY,
-  username VARCHAR(50) UNIQUE NOT NULL,
-  password_hash TEXT NOT NULL,
-  email VARCHAR(100) UNIQUE NOT NULL,
+  user_1_id VARCHAR(50) UNIQUE NOT NULL,
+  user_2_id VARCHAR(50) UNIQUE NOT NULL,
+  last_message VARCHAR(50)
+)
+
+CREATE TABLE IF NOT EXISTS messages (
+  message_id SERIAL PRIMARY KEY,
+  dialog_id INT REFERENCES dialogs(id) ON DELETE CASCADE,
+  sender_id INT UNIQUE NOT NULL,
+  content TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS friends (
-  id SERIAL PRIMARY KEY,
-  user_id INT REFERENCES users(id) ON DELETE CASCADE,
-  friend_id INT REFERENCES users(id) ON DELETE CASCADE,
-  status VARCHAR(20) CHECK (status IN ('pending', 'accepted', 'blocked'))
-);
+)
