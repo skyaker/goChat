@@ -19,5 +19,5 @@ CREATE TABLE IF NOT EXISTS friends (
   id SERIAL PRIMARY KEY,
   user_id INT REFERENCES users(id) ON DELETE CASCADE,
   friend_id INT REFERENCES users(id) ON DELETE CASCADE,
-  status VARCHAR(20) CHECK (status IN ('pending', 'accepted', 'blocked')),
+  status VARCHAR(20) CHECK (status IN ('pending', 'accepted', 'blocked'))
 );
