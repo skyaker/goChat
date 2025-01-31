@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"messages_service/handlers"
 	"os"
 	"strconv"
@@ -44,24 +45,30 @@ func main() {
 
 	// ----------------------------------------- Dev message test --------------------------------------------------
 
-	newmes := handlers.NewMessage{
+	newmes := handlers.MessageCreate{
 		DialogId:  1,
 		SenderId:  1,
 		Content:   "Hello Andrew",
 		CreatedAt: time.Now(),
 	}
-	newmes.SendMessage(db)
+	err = newmes.SendMessage(db)
+	if err != nil {
+		log.Printf("Failed to send message: %v", err)
+	}
 
 	// ----------------------------------------- Dev message test --------------------------------------------------
 
-	delmes := handlers.DeletedMessage{
+	delmes := handlers.MessageDelete{
 		MessageId: 21,
 	}
-	delmes.DeleteMessage(db)
+	err = delmes.DeleteMessage(db)
+	if err != nil {
+		log.Printf("Failed to delete message: %v", err)
+	}
 
 	// ----------------------------------------- Dev message test --------------------------------------------------
 
-	newmes = handlers.NewMessage{
+	newmes = handlers.MessageCreate{
 		DialogId:  1,
 		SenderId:  1,
 		Content:   "Hello Andrew",
@@ -69,9 +76,17 @@ func main() {
 	}
 	newmes.SendMessage(db)
 
-	editmes := handlers.EditedMessage{
+	if err != nil {
+		log.Printf("Failed to send message: %v", err)
+	}
+
+	editmes := handlers.MessageEdit{
 		MessageId:  23,
 		NewContent: "Hello Alex",
 	}
 	editmes.EditMessage(db)
+
+	if err != nil {
+		log.Printf("Failed to edit message: %v", err)
+	}
 }

@@ -7,10 +7,11 @@ END $$;
 
 CREATE TABLE IF NOT EXISTS dialogs (
   id SERIAL PRIMARY KEY,
-  user_1_id INT UNIQUE NOT NULL,
-  user_2_id INT UNIQUE NOT NULL,
+  user_1_id INT NOT NULL,
+  user_2_id INT NOT NULL,
   last_message VARCHAR(50),
   last_message_at TIMESTAMP DEFAULT NOW()
+  CONSTRAINT dialogs_users_pair_unique UNIQUE (LEAST(user_1_id, user_2_id), GREATEST(user_1_id, user_2_id))
 );
 
 CREATE TABLE IF NOT EXISTS messages (
