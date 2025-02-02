@@ -24,3 +24,26 @@ func TestMessageDispatch(t *testing.T) {
 	err := testMessage.SendMessage(db)
 	assert.NoError(t, err)
 }
+
+func TestDeleteMessage(t *testing.T) {
+	var db *sql.DB = dbconn.GetDbConnection()
+
+	testDelMessage := handlers.MessageDelete{
+		MessageId: 22,
+	}
+
+	err := testDelMessage.DeleteMessage(db)
+	assert.NoError(t, err)
+}
+
+func TestEditMessage(t *testing.T) {
+	var db *sql.DB = dbconn.GetDbConnection()
+
+	testEdMessage := handlers.MessageEdit{
+		MessageId:  21,
+		NewContent: "Hello John",
+	}
+
+	err := testEdMessage.EditMessage(db)
+	assert.NoError(t, err)
+}

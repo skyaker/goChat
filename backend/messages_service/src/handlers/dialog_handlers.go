@@ -24,10 +24,12 @@ func checkDialogExistanceByUsers(userId_1 *uint, userId_2 *uint, db *sql.DB) err
 }
 
 func checkDialogById(dialogId *uint, db *sql.DB) error {
-	query := `SELECT id FROM dialogs WHERE dialog_id = $1`
+	query := `SELECT id FROM dialogs WHERE id = $1`
 	_, err := db.Exec(query, dialogId)
 	return err
 }
+
+//TODO: check user existance in users db
 
 func (dialog *NewDialog) CreateDialog(db *sql.DB) error {
 	existanceErr := checkDialogExistanceByUsers(&dialog.UserId_1, &dialog.UserId_2, db)
@@ -60,7 +62,7 @@ func (dialog *DialogCleaningData) DeleteDialog(db *sql.DB) error {
 	}
 
 	query := `DELETE FROM dialogs
-						WHERE dialog_id = $1;`
+						WHERE id = $1;`
 	_, err := db.Exec(query, dialog.DialogId)
 	return err
 }
