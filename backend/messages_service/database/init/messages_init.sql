@@ -10,8 +10,10 @@ CREATE TABLE IF NOT EXISTS dialogs (
   user_1_id INT NOT NULL,
   user_2_id INT NOT NULL,
   last_message VARCHAR(50),
-  last_message_at TIMESTAMP DEFAULT NOW()
-  CONSTRAINT dialogs_users_pair_unique UNIQUE (LEAST(user_1_id, user_2_id), GREATEST(user_1_id, user_2_id))
+  last_message_at TIMESTAMP DEFAULT NOW(),
+  lesser_user INT GENERATED ALWAYS AS (LEAST(user_1_id, user_2_id)) STORED,
+  greater_user INT GENERATED ALWAYS AS (GREATEST(user_1_id, user_2_id)) STORED,
+  CONSTRAINT dialogs_users_pair_unique UNIQUE (lesser_user, greater_user)
 );
 
 CREATE TABLE IF NOT EXISTS messages (
