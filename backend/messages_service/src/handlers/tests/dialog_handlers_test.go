@@ -1,10 +1,11 @@
 package handlers_test
 
 import (
+	dbconn "messages_service/database/db_connection"
+
 	"database/sql"
 	"fmt"
-	dbconn "messages_service/db_connection"
-	"messages_service/handlers"
+	message_handlers "messages_service/src/handlers"
 	"testing"
 	"time"
 
@@ -22,7 +23,7 @@ func init() {
 func TestDialogCreation(t *testing.T) {
 	var db *sql.DB = dbconn.GetDbConnection()
 
-	testDialog := handlers.NewDialog{
+	testDialog := message_handlers.NewDialog{
 		UserId_1:        1,
 		UserId_2:        4,
 		LastMessage:     "Hello David",
@@ -36,7 +37,7 @@ func TestDialogCreation(t *testing.T) {
 func TestClearDialog(t *testing.T) {
 	var db *sql.DB = dbconn.GetDbConnection()
 
-	testCleaningData := handlers.DialogCleaningData{
+	testCleaningData := message_handlers.DialogCleaningData{
 		DialogId: 1,
 	}
 
@@ -47,7 +48,7 @@ func TestClearDialog(t *testing.T) {
 func TestDeleteDialog(t *testing.T) {
 	var db *sql.DB = dbconn.GetDbConnection()
 
-	testDeleteData := handlers.DialogCleaningData{
+	testDeleteData := message_handlers.DialogCleaningData{
 		DialogId: 7,
 	}
 

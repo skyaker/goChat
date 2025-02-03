@@ -1,9 +1,10 @@
 package handlers_test
 
 import (
+	dbconn "messages_service/database/db_connection"
+
 	"database/sql"
-	dbconn "messages_service/db_connection"
-	"messages_service/handlers"
+	message_handlers "messages_service/src/handlers"
 	"testing"
 	"time"
 
@@ -14,7 +15,7 @@ import (
 func TestMessageDispatch(t *testing.T) {
 	var db *sql.DB = dbconn.GetDbConnection()
 
-	testMessage := handlers.MessageCreate{
+	testMessage := message_handlers.MessageCreate{
 		DialogId:  1,
 		SenderId:  2,
 		Content:   "Hello David",
@@ -28,7 +29,7 @@ func TestMessageDispatch(t *testing.T) {
 func TestDeleteMessage(t *testing.T) {
 	var db *sql.DB = dbconn.GetDbConnection()
 
-	testDelMessage := handlers.MessageDelete{
+	testDelMessage := message_handlers.MessageDelete{
 		MessageId: 22,
 	}
 
@@ -39,7 +40,7 @@ func TestDeleteMessage(t *testing.T) {
 func TestEditMessage(t *testing.T) {
 	var db *sql.DB = dbconn.GetDbConnection()
 
-	testEdMessage := handlers.MessageEdit{
+	testEdMessage := message_handlers.MessageEdit{
 		MessageId:  21,
 		NewContent: "Hello John",
 	}

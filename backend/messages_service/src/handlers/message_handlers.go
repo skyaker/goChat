@@ -1,4 +1,4 @@
-package handlers
+package message_handlers
 
 import (
 	"database/sql"

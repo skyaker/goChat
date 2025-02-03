@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"messages_service/handlers"
+	handlers "messages_service/src/handlers"
 	"os"
 	"strconv"
 	"time"
