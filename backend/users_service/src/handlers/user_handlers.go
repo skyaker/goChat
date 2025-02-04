@@ -5,13 +5,6 @@ import (
 	"time"
 )
 
-// добавление пользователя
-// удаление пользователя
-// смена username
-// смена пароля
-// смена почты
-// смена аватарки (?)
-
 type UserCreateInfo struct {
 	Username    string    `json:"username"`
 	Password    string    `json:"password"`
@@ -37,26 +30,6 @@ type NewEmail struct {
 	Id    uint   `json:"id"`
 	Email string `json:"email"`
 }
-
-// func checkUserExistance(db *sql.DB, username *string, email *string) error {
-// 	query := `SELECT * FROM users
-// 						WHERE username = $1 and email = $2`
-// 	rows, err := db.Query(query, username, email)
-
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	if rows.Next() {
-// 		if err = rows.Scan(&username); err == nil {
-// 			return fmt.Errorf("username %v alredy exists", username)
-// 		} else if err = rows.Scan(&email); err == nil {
-// 			return fmt.Errorf("account with email \"%v\" alredy exists", email)
-// 		}
-// 	}
-
-// 	return nil
-// }
 
 func (userData *UserCreateInfo) AddUser(db *sql.DB) error {
 	query := `INSERT INTO users (username, password, email, created_at)
