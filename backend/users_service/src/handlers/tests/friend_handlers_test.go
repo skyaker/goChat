@@ -22,10 +22,34 @@ func TestFriendRequest(t *testing.T) {
 	var db *sql.DB = dbconn.GetDbConnection()
 
 	testStruct := friend_handlers.RequestInfo{
-		SenderId:   1,
-		AcceptorId: 5,
+		SenderId:   5,
+		AcceptorId: 4,
 		Aim:        friend_handlers.SendRequest,
 	}
-	err := testStruct.FriendRequest(db)
+	err := testStruct.SendFriendRequest(db)
+	assert.NoError(t, err)
+}
+
+func TestDeleteRequest(t *testing.T) {
+	var db *sql.DB = dbconn.GetDbConnection()
+
+	testStruct := friend_handlers.RequestInfo{
+		SenderId:   5,
+		AcceptorId: 4,
+		Aim:        friend_handlers.DeleteRequest,
+	}
+	err := testStruct.DeleteFriendRequest(db)
+	assert.NoError(t, err)
+}
+
+func TestRejectRequest(t *testing.T) {
+	var db *sql.DB = dbconn.GetDbConnection()
+
+	testStruct := friend_handlers.RequestInfo{
+		SenderId:   4,
+		AcceptorId: 5,
+		Aim:        friend_handlers.Reject,
+	}
+	err := testStruct.RejectRequest(db)
 	assert.NoError(t, err)
 }

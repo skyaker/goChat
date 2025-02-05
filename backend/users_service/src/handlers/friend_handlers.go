@@ -8,13 +8,13 @@ import (
 type Purpose string
 
 const (
-	SendRequest    Purpose = "sendRequest"
-	DeclineRequest Purpose = "declineRequest"
-	Accept         Purpose = "accept"
-	Reject         Purpose = "reject"
-	Delete         Purpose = "delete"
-	Block          Purpose = "block"
-	Unblock        Purpose = "unblock"
+	SendRequest   Purpose = "sendRequest"
+	DeleteRequest Purpose = "deleteRequest"
+	Accept        Purpose = "accept"
+	Reject        Purpose = "reject"
+	Delete        Purpose = "delete"
+	Block         Purpose = "block"
+	Unblock       Purpose = "unblock"
 )
 
 type RequestInfo struct {
@@ -41,7 +41,7 @@ func (reqInfo *RequestInfo) getAccessStatus(db *sql.DB) ([]Purpose, error) {
 	if reqInfo.AcceptorId == status_creator {
 		switch status {
 		case "pending":
-			return []Purpose{DeclineRequest, Block}, nil
+			return []Purpose{DeleteRequest, Block}, nil
 		case "accepted":
 			return []Purpose{Delete, Block}, nil
 		case "blocked":
@@ -61,15 +61,14 @@ func (reqInfo *RequestInfo) getAccessStatus(db *sql.DB) ([]Purpose, error) {
 	return []Purpose{}, err
 }
 
-func (reqInfo *RequestInfo) FriendRequest(db *sql.DB) error {
-	var query string
+func (reqInfo *RequestInfo) confirmPermission(db *sql.DB) error {
 	var availableFunctions []Purpose
 	var accessible bool = false
 
 	availableFunctions, err := reqInfo.getAccessStatus(db)
 
 	for _, v := range availableFunctions {
-		if v == SendRequest {
+		if v == reqInfo.Aim {
 			accessible = true
 		}
 	}
@@ -77,6 +76,13 @@ func (reqInfo *RequestInfo) FriendRequest(db *sql.DB) error {
 	if !accessible {
 		return fmt.Errorf("user doesn't have permission for operation: %v", reqInfo.Aim)
 	}
+
+	return err
+}
+
+func (reqInfo *RequestInfo) SendFriendRequest(db *sql.DB) error {
+	var query string
+	err := reqInfo.confirmPermission(db)
 
 	if err == nil {
 		query = `UPDATE relations
@@ -86,10 +92,42 @@ func (reqInfo *RequestInfo) FriendRequest(db *sql.DB) error {
 	} else if err == sql.ErrNoRows {
 		query = `INSERT INTO relations (user_1_id, user_2_id, status, status_creator)
 						 VALUES ($1, $2, $3, $4)`
-	} else if err != sql.ErrNoRows {
+	} else {
 		return err
 	}
 
 	_, err = db.Exec(query, reqInfo.SenderId, reqInfo.AcceptorId, "pending", reqInfo.SenderId)
+	return err
+}
+
+func (reqInfo *RequestInfo) DeleteFriendRequest(db *sql.DB) error {
+	var query string
+	err := reqInfo.confirmPermission(db)
+
+	if err == nil {
+		query = `DELETE FROM relations
+						 WHERE (user_1_id = $1 AND user_2_id = $2)
+						 		OR (user_1_id = $2 AND user_2_id = $1)`
+	} else {
+		return err
+	}
+
+	_, err = db.Exec(query, reqInfo.SenderId, reqInfo.AcceptorId)
+	return err
+}
+
+func (reqInfo *RequestInfo) RejectRequest(db *sql.DB) error {
+	var query string
+	err := reqInfo.confirmPermission(db)
+
+	if err == nil {
+		query = `DELETE FROM relations
+						 WHERE (user_1_id = $1 AND user_2_id = $2)
+						 		OR (user_1_id = $2 AND user_2_id = $1)`
+	} else {
+		return err
+	}
+
+	_, err = db.Exec(query, reqInfo.SenderId, reqInfo.AcceptorId)
 	return err
 }
