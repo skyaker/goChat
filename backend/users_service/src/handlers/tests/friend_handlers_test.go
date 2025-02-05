@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 	dbconn "users_service/database/db_connection"
-	user_handlers "users_service/src/handlers"
+	friend_handlers "users_service/src/handlers"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -21,9 +21,10 @@ func init() {
 func TestFriendRequest(t *testing.T) {
 	var db *sql.DB = dbconn.GetDbConnection()
 
-	testStruct := user_handlers.FriendRequestInfo{
+	testStruct := friend_handlers.RequestInfo{
 		SenderId:   1,
-		AcceptorId: 4,
+		AcceptorId: 5,
+		Aim:        friend_handlers.SendRequest,
 	}
 	err := testStruct.FriendRequest(db)
 	assert.NoError(t, err)
