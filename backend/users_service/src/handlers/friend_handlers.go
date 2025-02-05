@@ -41,7 +41,7 @@ func (reqInfo *RequestInfo) getAccessStatus(db *sql.DB) ([]Purpose, error) {
 	if reqInfo.AcceptorId == status_creator {
 		switch status {
 		case "pending":
-			return []Purpose{DeleteRequest, Block}, nil
+			return []Purpose{Accept, Reject, Block}, nil
 		case "accepted":
 			return []Purpose{Delete, Block}, nil
 		case "blocked":
@@ -50,7 +50,7 @@ func (reqInfo *RequestInfo) getAccessStatus(db *sql.DB) ([]Purpose, error) {
 	} else {
 		switch status {
 		case "pending":
-			return []Purpose{Accept, Reject, Block}, nil
+			return []Purpose{DeleteRequest, Block}, nil
 		case "accepted":
 			return []Purpose{Delete, Block}, nil
 		case "blocked":
@@ -113,6 +113,23 @@ func (reqInfo *RequestInfo) DeleteFriendRequest(db *sql.DB) error {
 	}
 
 	_, err = db.Exec(query, reqInfo.SenderId, reqInfo.AcceptorId)
+	return err
+}
+
+func (reqInfo *RequestInfo) AcceptRequest(db *sql.DB) error {
+	var query string
+	err := reqInfo.confirmPermission(db)
+
+	if err == nil {
+		query = `UPDATE relations
+						 SET user_1_id = $1, user_2_id = $2, status = $3, status_creator = $4
+						 WHERE (user_1_id = $1 AND user_2_id = $2) 
+							  OR (user_1_id = $2 AND user_2_id = $1)`
+	} else {
+		return err
+	}
+
+	_, err = db.Exec(query, reqInfo.SenderId, reqInfo.AcceptorId, "accepted", reqInfo.SenderId)
 	return err
 }
 
