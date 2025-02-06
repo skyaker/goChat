@@ -45,7 +45,7 @@ func (reqInfo *RequestInfo) getAccessStatus(db *sql.DB) ([]Purpose, error) {
 		case "accepted":
 			return []Purpose{Delete, Block}, nil
 		case "blocked":
-			return []Purpose{Unblock}, nil
+			return []Purpose{}, nil
 		}
 	} else {
 		switch status {
@@ -54,7 +54,7 @@ func (reqInfo *RequestInfo) getAccessStatus(db *sql.DB) ([]Purpose, error) {
 		case "accepted":
 			return []Purpose{Delete, Block}, nil
 		case "blocked":
-			return []Purpose{Block}, nil
+			return []Purpose{Unblock}, nil
 		}
 	}
 
@@ -141,6 +141,59 @@ func (reqInfo *RequestInfo) RejectRequest(db *sql.DB) error {
 		query = `DELETE FROM relations
 						 WHERE (user_1_id = $1 AND user_2_id = $2)
 						 		OR (user_1_id = $2 AND user_2_id = $1)`
+	} else {
+		return err
+	}
+
+	_, err = db.Exec(query, reqInfo.SenderId, reqInfo.AcceptorId)
+	return err
+}
+
+func (reqInfo *RequestInfo) DeleteFriend(db *sql.DB) error {
+	var query string
+	err := reqInfo.confirmPermission(db)
+
+	if err == nil {
+		query = `UPDATE relations
+						 SET user_1_id = $1, user_2_id = $2, status = $3, status_creator = $4
+						 WHERE (user_1_id = $1 AND user_2_id = $2) 
+							  OR (user_1_id = $2 AND user_2_id = $1)`
+	} else {
+		return err
+	}
+
+	_, err = db.Exec(query, reqInfo.SenderId, reqInfo.AcceptorId, "pending", reqInfo.AcceptorId)
+	return err
+}
+
+func (reqInfo *RequestInfo) BlockUser(db *sql.DB) error {
+	var query string
+	err := reqInfo.confirmPermission(db)
+
+	if err == nil {
+		query = `UPDATE relations
+						 SET user_1_id = $1, user_2_id = $2, status = $3, status_creator = $4
+						 WHERE (user_1_id = $1 AND user_2_id = $2) 
+							  OR (user_1_id = $2 AND user_2_id = $1)`
+	} else if err == sql.ErrNoRows {
+		query = `INSERT INTO relations (user_1_id, user_2_id, status, status_creator)
+						 VALUES ($1, $2, $3, $4)`
+	} else {
+		return err
+	}
+
+	_, err = db.Exec(query, reqInfo.SenderId, reqInfo.AcceptorId, "blocked", reqInfo.SenderId)
+	return err
+}
+
+func (reqInfo *RequestInfo) UnblockUser(db *sql.DB) error {
+	var query string
+	err := reqInfo.confirmPermission(db)
+
+	if err == nil {
+		query = `DELETE FROM relations
+						 WHERE (user_1_id = $1 and user_2_id = $2)
+						 		OR (user_1_id = $2 and user_2_id = $1)`
 	} else {
 		return err
 	}

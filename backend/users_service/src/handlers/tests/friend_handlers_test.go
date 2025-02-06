@@ -46,8 +46,8 @@ func TestAcceptRequest(t *testing.T) {
 	var db *sql.DB = dbconn.GetDbConnection()
 
 	testStruct := friend_handlers.RequestInfo{
-		SenderId:   3,
-		AcceptorId: 1,
+		SenderId:   1,
+		AcceptorId: 3,
 		Aim:        friend_handlers.Accept,
 	}
 	err := testStruct.AcceptRequest(db)
@@ -58,10 +58,46 @@ func TestRejectRequest(t *testing.T) {
 	var db *sql.DB = dbconn.GetDbConnection()
 
 	testStruct := friend_handlers.RequestInfo{
-		SenderId:   3,
+		SenderId:   2,
 		AcceptorId: 1,
 		Aim:        friend_handlers.Reject,
 	}
 	err := testStruct.RejectRequest(db)
+	assert.NoError(t, err)
+}
+
+func TestDeleteFriend(t *testing.T) {
+	var db *sql.DB = dbconn.GetDbConnection()
+
+	testStruct := friend_handlers.RequestInfo{
+		SenderId:   3,
+		AcceptorId: 1,
+		Aim:        friend_handlers.Delete,
+	}
+	err := testStruct.DeleteFriend(db)
+	assert.NoError(t, err)
+}
+
+func TestBlockUser(t *testing.T) {
+	var db *sql.DB = dbconn.GetDbConnection()
+
+	testStruct := friend_handlers.RequestInfo{
+		SenderId:   6,
+		AcceptorId: 5,
+		Aim:        friend_handlers.Block,
+	}
+	err := testStruct.BlockUser(db)
+	assert.NoError(t, err)
+}
+
+func TestUnblockUesr(t *testing.T) {
+	var db *sql.DB = dbconn.GetDbConnection()
+
+	testStruct := friend_handlers.RequestInfo{
+		SenderId:   6,
+		AcceptorId: 5,
+		Aim:        friend_handlers.Unblock,
+	}
+	err := testStruct.UnblockUser(db)
 	assert.NoError(t, err)
 }
