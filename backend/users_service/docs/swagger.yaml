@@ -1,0 +1,57 @@
+definitions:
+  user_handlers.UserCreateInfo:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Inserts user in db
+      parameters:
+      - description: User data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/user_handlers.UserCreateInfo'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User registered successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: User already exists
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      tags:
+      - users
+swagger: "2.0"
