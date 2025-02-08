@@ -1,0 +1,37 @@
+definitions:
+  auth_handlers.UserTokenBody:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      username:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /auth:
+    post:
+      consumes:
+      - application/json
+      description: Creates token based on user info
+      parameters:
+      - description: User data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/auth_handlers.UserTokenBody'
+      produces:
+      - application/json
+      responses:
+        "500":
+          description: Secret key missing or token signing error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      tags:
+      - auth
+swagger: "2.0"
