@@ -1,22 +1,28 @@
 package user_handlers
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
 // UserCreateInfo info structure for sign up
 type UserCreateInfo struct {
+	UserId      uint      `json:"user_id"`
 	Username    string    `json:"username"`
 	Password    string    `json:"password"`
 	Email       string    `json:"email"`
 	DateCreated time.Time `json:"created_at"`
 }
 
+// UserDeleteInfo info structure for removing
 type UserDeleteInfo struct {
 	Id uint `json:"id"`
 }
@@ -36,19 +42,50 @@ type NewEmail struct {
 	Email string `json:"email"`
 }
 
-func checkUserExistance(db *sql.DB, username *string, email *string) (bool, error) {
-	query := `SELECT id FROM users 
+func checkUserExistanceToInsert(db *sql.DB, username *string, email *string) error {
+	query := `SELECT id 
+						FROM users 
 						WHERE username = $1 OR email = $2`
 	row := db.QueryRow(query, username, email)
 	err := row.Scan(new(int))
 
-	if err == sql.ErrNoRows {
-		return false, nil
-	} else if err != sql.ErrNoRows && err != nil {
-		return false, err
-	} else {
-		return true, nil
+	return err
+}
+
+func checkUserExistanceToDelete(db *sql.DB, id *uint) error {
+	query := `SELECT * 
+						FROM users
+						WHERE id = $1`
+	row := db.QueryRow(query, id)
+	err := row.Scan(new(int))
+
+	return err
+}
+
+func (info *UserCreateInfo) getUserToken() (string, error) {
+	var url string = "http://localhost:8081/auth/token"
+
+	jsonData, err := json.Marshal(info)
+	if err != nil {
+		return "", fmt.Errorf("error encoding JSON: %w", err)
 	}
+
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return "", fmt.Errorf("auth service returned status: %d", err)
+	}
+
+	var result map[string]string
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", fmt.Errorf("error decoding response: %w", err)
+	}
+
+	token, status := result["token"]
+	if !status {
+		return "", fmt.Errorf("token was not found in response")
+	}
+
+	return token, nil
 }
 
 // AddUser New user creation
@@ -65,16 +102,22 @@ func checkUserExistance(db *sql.DB, username *string, email *string) (bool, erro
 func AddUser(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var userData UserCreateInfo
+		var exists bool = true
+
 		if err := json.NewDecoder(r.Body).Decode(&userData); err != nil {
 			http.Error(w, "Invalid request", http.StatusBadRequest)
 			return
 		}
 
-		exists, err := checkUserExistance(db, &userData.Username, &userData.Email)
+		err := checkUserExistanceToInsert(db, &userData.Username, &userData.Email)
 
-		if err != nil && err != sql.ErrNoRows {
-			http.Error(w, "Database error", http.StatusConflict)
-			return
+		if err != nil {
+			if err == sql.ErrNoRows {
+				exists = false
+			} else {
+				http.Error(w, "Database error", http.StatusConflict)
+				return
+			}
 		}
 
 		if exists {
@@ -89,24 +132,71 @@ func AddUser(db *sql.DB) http.HandlerFunc {
 		}
 
 		query := `INSERT INTO users (username, password, email, created_at)
-							VALUES ($1, $2, $3, $4)`
-		_, err = db.Exec(query, userData.Username, string(hashedPassword), userData.Email, userData.DateCreated)
+							VALUES ($1, $2, $3, $4) RETURNING id`
+		err = db.QueryRow(query, userData.Username, string(hashedPassword), userData.Email, userData.DateCreated).Scan(&userData.UserId)
 
 		if err != nil {
 			http.Error(w, "Database insert error", http.StatusInternalServerError)
 			return
 		}
 
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(map[string]string{"message": "User registered successfully"})
+		userToken, err := userData.getUserToken()
+		if err != nil {
+			http.Error(w, "Error getting token", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "User registered successfully",
+			"token":   userToken,
+		})
 	}
 }
 
-func (delData *UserDeleteInfo) DeleteUser(db *sql.DB) error {
-	query := `DELETE FROM users
-						WHERE id = $1`
-	_, err := db.Exec(query, delData.Id)
-	return err
+// DeleteUser User removal
+// @Description Deletes user from db
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param user body UserDeleteInfo true "Delete data"
+// @Success 204 {object} map[string]string "User was deleted successfully"
+// @Failure 400 {object} map[string]string "Invalid request"
+// @Failure 404 {object} map[string]string "User doesn't exist"
+// @Failure 500 {object} map[string]string "Database error"
+func DeleteUser(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var delData UserDeleteInfo
+		idParam := chi.URLParam(r, "id")
+
+		userID64, err := strconv.ParseUint(idParam, 10, 64)
+		if err != nil {
+			http.Error(w, "Invalid user ID", http.StatusBadRequest)
+			return
+		}
+		userID := uint(userID64)
+
+		err = checkUserExistanceToDelete(db, &userID)
+
+		if err != nil {
+			if err == sql.ErrNoRows {
+				http.Error(w, "Cannot delete: user does not exist", http.StatusNotFound)
+				return
+			}
+			http.Error(w, "Database error", http.StatusConflict)
+			return
+		}
+
+		query := `DELETE FROM users
+							WHERE id = $1`
+		_, err = db.Exec(query, delData.Id)
+
+		if err != nil {
+			http.Error(w, "Database delete error", http.StatusInternalServerError)
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}
 }
 
 func (newUsernameData *NewUsername) ChangeUsername(db *sql.DB) error {

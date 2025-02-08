@@ -1,92 +1,46 @@
+// package main
+
+// import (
+// 	"fmt"
+// 	routes "messages_service/src/routes"
+// 	"net/http"
+
+// 	_ "github.com/lib/pq"
+// )
+
+// func main() {
+// 	http.HandleFunc("/send", routes.CreateMessage)
+// 	fmt.Println("Server was started at http://localhost:8080")
+// 	http.ListenAndServe(":8080", nil)
+// }
+
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
-	handlers "messages_service/src/handlers"
-	"os"
-	"strconv"
+	"net/http"
 	"time"
-
-	"github.com/joho/godotenv"
-	_ "github.com/lib/pq"
 )
 
-func init() {
-	if err := godotenv.Load(); err != nil {
-		fmt.Println("No .env file found")
-	}
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		next.ServeHTTP(w, r)
+		log.Printf("%s %s %v", r.Method, r.URL.Path, time.Since(start))
+	})
+}
+
+func helloHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Hello, World!")
 }
 
 func main() {
-	host, _ := os.LookupEnv("host")
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", helloHandler)
 
-	port, _ := os.LookupEnv("port")
-	portInt, _ := strconv.Atoi(port)
-	portUint := uint(portInt)
+	wrappedMux := loggingMiddleware(mux)
 
-	user, _ := os.LookupEnv("user")
-	password, _ := os.LookupEnv("password")
-	dbname, _ := os.LookupEnv("dbname")
-
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, portUint, user, password, dbname)
-
-	db, err := sql.Open("postgres", psqlInfo)
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
-
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-
-	// ----------------------------------------- Dev message test --------------------------------------------------
-
-	newmes := handlers.MessageCreate{
-		DialogId:  1,
-		SenderId:  1,
-		Content:   "Hello Andrew",
-		CreatedAt: time.Now(),
-	}
-	err = newmes.SendMessage(db)
-	if err != nil {
-		log.Printf("Failed to send message: %v", err)
-	}
-
-	// ----------------------------------------- Dev message test --------------------------------------------------
-
-	delmes := handlers.MessageDelete{
-		MessageId: 21,
-	}
-	err = delmes.DeleteMessage(db)
-	if err != nil {
-		log.Printf("Failed to delete message: %v", err)
-	}
-
-	// ----------------------------------------- Dev message test --------------------------------------------------
-
-	newmes = handlers.MessageCreate{
-		DialogId:  1,
-		SenderId:  1,
-		Content:   "Hello Andrew",
-		CreatedAt: time.Now(),
-	}
-	newmes.SendMessage(db)
-
-	if err != nil {
-		log.Printf("Failed to send message: %v", err)
-	}
-
-	editmes := handlers.MessageEdit{
-		MessageId:  23,
-		NewContent: "Hello Alex",
-	}
-	editmes.EditMessage(db)
-
-	if err != nil {
-		log.Printf("Failed to edit message: %v", err)
-	}
+	fmt.Println("Server started at http://localhost:8080")
+	http.ListenAndServe(":8080", wrappedMux)
 }

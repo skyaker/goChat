@@ -7,8 +7,6 @@ import (
 	"os"
 	"time"
 
-	// "github.com/go-chi/chi/v5"
-
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
 )
@@ -21,6 +19,7 @@ func init() {
 
 // UserTokenBody required info for token
 type UserTokenBody struct {
+	UserId      uint      `json:"user_id"`
 	Username    string    `json:"username"`
 	Email       string    `json:"email"`
 	DateCreated time.Time `json:"created_at"`
@@ -33,7 +32,7 @@ type UserTokenBody struct {
 // @Produce json
 // @Param user body UserTokenBody true "User data"
 // @Failure 500 {object} map[string]string "Secret key missing or token signing error"
-// @Router /auth [post]
+// @Router /auth/token [post]
 func CreateToken() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var userData UserTokenBody
@@ -50,6 +49,7 @@ func CreateToken() http.HandlerFunc {
 		}
 
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			"token":       userData.UserId,
 			"username":    userData.Username,
 			"email":       userData.Email,
 			"dateCreated": userData.DateCreated.Unix(),

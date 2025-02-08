@@ -31,6 +31,7 @@ func main() {
 	r := chi.NewRouter()
 
 	r.Post("/register", handlers.AddUser(db))
+	r.Delete("/delete/{id}", handlers.DeleteUser(db))
 
 	r.Get("/swagger/*", httpSwagger.Handler(
 		httpSwagger.URL("http://localhost:8080/swagger/doc.json"),

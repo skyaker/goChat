@@ -14,7 +14,7 @@ import (
 func main() {
 	r := chi.NewRouter()
 
-	r.Post("/auth", handlers.CreateToken())
+	r.Post("/auth/token", handlers.CreateToken())
 
 	r.Get("/swagger/*", httpSwagger.Handler(
 		httpSwagger.URL("http://localhost:8081/swagger/doc.json"),
