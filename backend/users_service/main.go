@@ -31,6 +31,7 @@ func main() {
 	r := chi.NewRouter()
 
 	r.Post("/register", handlers.AddUser(db))
+	r.Post("/login", handlers.Login(db))
 	r.Delete("/delete/{id}", handlers.DeleteUser(db))
 
 	r.Get("/swagger/*", httpSwagger.Handler(

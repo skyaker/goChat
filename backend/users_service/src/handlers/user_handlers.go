@@ -22,6 +22,18 @@ type UserCreateInfo struct {
 	DateCreated time.Time `json:"created_at"`
 }
 
+// UserTokenBody required info for getting token
+type UserTokenBody struct {
+	UserId   uint   `json:"user_id"`
+	Username string `json:"username"`
+}
+
+// UserLoginInfo required info for logging in
+type UserLoginInfo struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 // UserDeleteInfo info structure for removing
 type UserDeleteInfo struct {
 	Id uint `json:"id"`
@@ -52,6 +64,29 @@ func checkUserExistanceToInsert(db *sql.DB, username *string, email *string) err
 	return err
 }
 
+func checkUserLoginData(db *sql.DB, username *string, password *string) error {
+	var realPassword string
+	query := `SELECT password
+						FROM users
+						WHERE username = $1`
+	err := db.QueryRow(query, username).Scan(&realPassword)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return fmt.Errorf("invalid username or password")
+		} else {
+			return err
+		}
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(realPassword), []byte(*password))
+	if err != nil {
+		return fmt.Errorf("invalid username or password")
+	}
+
+	return nil
+}
+
 func checkUserExistanceToDelete(db *sql.DB, id *uint) error {
 	query := `SELECT * 
 						FROM users
@@ -62,8 +97,12 @@ func checkUserExistanceToDelete(db *sql.DB, id *uint) error {
 	return err
 }
 
-func (info *UserCreateInfo) getUserToken() (string, error) {
+func getUserToken(userId *uint, username *string) (string, error) {
 	var url string = "http://localhost:8081/auth/token"
+	var info = UserTokenBody{
+		UserId:   *userId,
+		Username: *username,
+	}
 
 	jsonData, err := json.Marshal(info)
 	if err != nil {
@@ -140,7 +179,62 @@ func AddUser(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		userToken, err := userData.getUserToken()
+		userToken, err := getUserToken(&userData.UserId, &userData.Username)
+		if err != nil {
+			http.Error(w, "Error getting token", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "User registered successfully",
+			"token":   userToken,
+		})
+	}
+}
+
+// Login User logging in
+// @Description Returns token to user after login, password confirmation
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param user body UserLoginInfo
+// @Success 201 {object} map[string]string "User registered successfully"
+// @Failure 400 {Object} map[string]string "Invalid request"
+// @Failure 401 {Object} map[string]string "Invalid username or password"
+// @Failure 500 {object} map[string]string "Database error"
+func Login(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var userData UserLoginInfo
+		var userId uint
+
+		if err := json.NewDecoder(r.Body).Decode(&userData); err != nil {
+			http.Error(w, "Invalid request", http.StatusBadRequest)
+			return
+		}
+
+		err := checkUserLoginData(db, &userData.Username, &userData.Password)
+
+		if err != nil {
+			if err.Error() == "invalid username or password" {
+				http.Error(w, "Invalid username or password", http.StatusUnauthorized)
+			} else {
+				http.Error(w, "Database error", http.StatusInternalServerError)
+			}
+			return
+		}
+
+		query := `SELECT id
+							FROM users
+							WHERE username = $1`
+		err = db.QueryRow(query, userData.Username).Scan(&userId)
+
+		if err != nil {
+			http.Error(w, "Error getting user id", http.StatusInternalServerError)
+			return
+		}
+
+		userToken, err := getUserToken(&userId, &userData.Username)
 		if err != nil {
 			http.Error(w, "Error getting token", http.StatusInternalServerError)
 			return

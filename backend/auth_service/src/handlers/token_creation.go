@@ -19,10 +19,8 @@ func init() {
 
 // UserTokenBody required info for token
 type UserTokenBody struct {
-	UserId      uint      `json:"user_id"`
-	Username    string    `json:"username"`
-	Email       string    `json:"email"`
-	DateCreated time.Time `json:"created_at"`
+	UserId   uint   `json:"user_id"`
+	Username string `json:"username"`
 }
 
 // CreateToken() Creates token
@@ -49,11 +47,9 @@ func CreateToken() http.HandlerFunc {
 		}
 
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-			"token":       userData.UserId,
-			"username":    userData.Username,
-			"email":       userData.Email,
-			"dateCreated": userData.DateCreated.Unix(),
-			"exp":         time.Now().AddDate(0, 6, 0).Unix(),
+			"user_id":  userData.UserId,
+			"username": userData.Username,
+			"exp":      time.Now().AddDate(0, 6, 0).Unix(),
 		})
 
 		signed, err := token.SignedString([]byte(key))
