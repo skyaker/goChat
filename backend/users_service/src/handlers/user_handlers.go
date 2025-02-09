@@ -198,11 +198,12 @@ func AddUser(db *sql.DB) http.HandlerFunc {
 // @Tags users
 // @Accept json
 // @Produce json
-// @Param user body UserLoginInfo
+// @Param user body UserLoginInfo true "User data"
 // @Success 201 {object} map[string]string "User registered successfully"
 // @Failure 400 {Object} map[string]string "Invalid request"
 // @Failure 401 {Object} map[string]string "Invalid username or password"
 // @Failure 500 {object} map[string]string "Database error"
+// @Router /login [post]
 func Login(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var userData UserLoginInfo

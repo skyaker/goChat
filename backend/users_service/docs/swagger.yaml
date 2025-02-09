@@ -7,12 +7,63 @@ definitions:
         type: string
       password:
         type: string
+      user_id:
+        type: integer
+      username:
+        type: string
+    type: object
+  user_handlers.UserDeleteInfo:
+    properties:
+      id:
+        type: integer
+    type: object
+  user_handlers.UserLoginInfo:
+    properties:
+      password:
+        type: string
       username:
         type: string
     type: object
 info:
   contact: {}
 paths:
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Returns token to user after login, password confirmation
+      parameters:
+      - description: User data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/user_handlers.UserLoginInfo'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User registered successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            type: Object
+        "401":
+          description: Invalid username or password
+          schema:
+            type: Object
+        "500":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      tags:
+      - users
   /register:
     post:
       consumes:
